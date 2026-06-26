@@ -164,18 +164,21 @@
 	.nav-buttons {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.6rem;
 	}
 	.btn {
-		display: block;
-		text-align: center;
-		padding: 0.85rem 1rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 3.5rem;
+		padding: 1rem 1.15rem;
 		border-radius: var(--radius-card);
 		border: 1px solid var(--border-strong);
 		background: var(--surface);
 		color: var(--text-strong);
 		text-decoration: none;
 		font-weight: 600;
+		font-size: 1.05rem;
 	}
 	.btn.primary {
 		background: var(--accent);

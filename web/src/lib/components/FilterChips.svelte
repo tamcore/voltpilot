@@ -47,13 +47,14 @@
 	.chip {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
-		padding: 0.4rem 0.7rem;
+		gap: 0.45rem;
+		min-height: 2.75rem;
+		padding: 0.6rem 1rem;
 		border-radius: var(--radius-pill);
 		border: 1px solid var(--border);
 		background: var(--bg-elev);
 		color: var(--muted);
-		font-size: 0.82rem;
+		font-size: 0.92rem;
 		font-weight: 500;
 		transition: all 0.15s;
 	}
@@ -81,10 +82,11 @@
 	.opt {
 		font-family: var(--font-display);
 		font-weight: 600;
-		font-size: 0.78rem;
+		font-size: 0.86rem;
 		letter-spacing: 0.1em;
 		color: var(--muted);
-		padding: 0.3rem 0.7rem;
+		min-height: 2.5rem;
+		padding: 0.5rem 1rem;
 		border-radius: var(--radius-pill);
 		transition: color 0.15s, background 0.15s;
 	}

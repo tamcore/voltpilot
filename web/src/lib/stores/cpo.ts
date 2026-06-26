@@ -3,7 +3,12 @@ import type { CPO } from '$lib/types/api';
 
 const STORAGE_KEY = 'voltpilot:cpo';
 
-export type PreferredCPO = { operatorCode: string; operator: string } | null;
+// all=true means "every operator" (no operatorCode filter); operatorCode is
+// empty in that case. A null store value means no choice has been made yet.
+export type PreferredCPO = { operatorCode: string; operator: string; all?: boolean } | null;
+
+// ALL_OPERATORS is the sentinel choice shown at the top of the picker.
+export const ALL_OPERATORS: PreferredCPO = { operatorCode: '', operator: 'All operators', all: true };
 
 function load(): PreferredCPO {
 	if (typeof localStorage === 'undefined') return null;
@@ -11,6 +16,7 @@ function load(): PreferredCPO {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (!raw) return null;
 		const v = JSON.parse(raw) as PreferredCPO;
+		if (v && v.all === true) return ALL_OPERATORS;
 		if (v && typeof v.operatorCode === 'string' && v.operatorCode) return v;
 		return null;
 	} catch {
@@ -34,6 +40,10 @@ function createCpoStore() {
 				: null;
 			persist(v);
 			inner.set(v);
+		},
+		chooseAll() {
+			persist(ALL_OPERATORS);
+			inner.set(ALL_OPERATORS);
 		},
 		clear() {
 			persist(null);

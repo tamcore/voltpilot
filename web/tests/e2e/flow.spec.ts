@@ -97,6 +97,18 @@ test('first run: pick a CPO, see chargers, open detail with nav links', async ({
 	await expect(page.getByRole('link', { name: 'Waze' })).toHaveAttribute('href', /waze\.com\/ul/);
 });
 
+test('first run: "All operators" entry selects every CPO', async ({ page }) => {
+	await mockApi(page);
+	await page.addInitScript(() => localStorage.clear());
+	await page.goto('/');
+
+	await expect(page.getByTestId('cpo-all')).toBeVisible();
+	await page.getByTestId('cpo-all').click();
+
+	await expect(page.getByTestId('active-cpo')).toHaveText('All operators');
+	await expect(page.getByTestId('charger-card')).toBeVisible();
+});
+
 test('returning user: remembered CPO skips the chooser', async ({ page }) => {
 	await mockApi(page);
 	await page.addInitScript(() =>

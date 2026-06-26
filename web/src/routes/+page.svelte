@@ -51,6 +51,10 @@
 		preferredCpo.choose(cpo);
 	}
 
+	function pickAll() {
+		preferredCpo.chooseAll();
+	}
+
 	function changeCpo() {
 		preferredCpo.clear();
 		cposFetchedFor = null;
@@ -74,7 +78,7 @@
 			<p class="err">{cposError}</p>
 		{/if}
 		{#if center}
-			<CpoPicker {cpos} loading={cposLoading} onpick={pick} />
+			<CpoPicker {cpos} loading={cposLoading} onpick={pick} onall={pickAll} />
 		{/if}
 	</section>
 {:else}
@@ -159,13 +163,14 @@
 	}
 	.change {
 		font-family: var(--font-display);
-		font-size: 0.72rem;
+		font-size: 0.8rem;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
 		color: var(--accent);
 		border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
 		border-radius: var(--radius-pill);
-		padding: 0.4rem 0.8rem;
+		padding: 0.6rem 1rem;
+		min-height: 2.75rem;
 	}
 	.controls {
 		display: flex;
@@ -184,11 +189,12 @@
 	}
 	.view-toggle button {
 		font-family: var(--font-display);
-		font-size: 0.74rem;
+		font-size: 0.82rem;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: var(--muted);
-		padding: 0.3rem 0.8rem;
+		padding: 0.55rem 1rem;
+		min-height: 2.75rem;
 		border-radius: var(--radius-pill);
 	}
 	.view-toggle button.active {

@@ -4,8 +4,9 @@
 	let {
 		cpos,
 		loading = false,
-		onpick
-	}: { cpos: CPO[]; loading?: boolean; onpick: (cpo: CPO) => void } = $props();
+		onpick,
+		onall
+	}: { cpos: CPO[]; loading?: boolean; onpick: (cpo: CPO) => void; onall: () => void } = $props();
 
 	let query = $state('');
 	const filtered = $derived(
@@ -32,6 +33,12 @@
 		<p class="hint">No operators found nearby. Try moving the map or check your connection.</p>
 	{:else}
 		<ul class="list">
+			<li>
+				<button type="button" class="cpo all" onclick={() => onall()} data-testid="cpo-all">
+					<span class="name">All operators</span>
+					<span class="count mono">{cpos.reduce((s, c) => s + c.count, 0)}</span>
+				</button>
+			</li>
 			{#each filtered as c (c.operatorCode)}
 				<li>
 					<button type="button" class="cpo" onclick={() => onpick(c)} data-testid="cpo-option">
@@ -57,12 +64,14 @@
 	}
 	.search {
 		width: 100%;
-		padding: 0.65rem 0.85rem;
+		min-height: 3rem;
+		padding: 0.8rem 1rem;
 		border-radius: var(--radius-pill);
 		border: 1px solid var(--border);
 		background: var(--bg-elev);
 		color: var(--text);
 		font: inherit;
+		font-size: 1rem;
 	}
 	.search:focus-visible {
 		outline: 2px solid var(--accent);
@@ -82,22 +91,33 @@
 	}
 	.cpo {
 		width: 100%;
+		min-height: 3.5rem;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.5rem;
-		padding: 0.75rem 1rem;
+		padding: 1rem 1.15rem;
 		border-radius: var(--radius-card);
 		border: 1px solid var(--border);
 		background: var(--surface);
 		color: var(--text);
 		transition: border-color 0.15s, background 0.15s;
 	}
-	.cpo:hover {
+	.cpo:hover,
+	.cpo:focus-visible {
 		border-color: var(--accent);
+		outline: none;
+	}
+	.cpo.all {
+		border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+		background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+	}
+	.cpo.all .name {
+		color: var(--accent);
 	}
 	.name {
 		font-weight: 600;
+		font-size: 1.05rem;
 	}
 	.count {
 		font-size: 0.78rem;

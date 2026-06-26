@@ -40,7 +40,7 @@ function createChargersStore() {
 				lat: latestGeo.lat,
 				lon: latestGeo.lon,
 				radiusKm: SEARCH_RADIUS_KM,
-				operatorCode: cpo.operatorCode,
+				operatorCode: cpo.all ? undefined : cpo.operatorCode,
 				current: f.current,
 				availableOnly: f.availableOnly,
 				limit: RESULT_LIMIT,
