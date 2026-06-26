@@ -19,8 +19,18 @@ type Station struct {
 	UnknownStateChargePoints int      `json:"unknownStateChargePoints"`
 	PlugTypes                []string `json:"plugTypes"`
 	PlugTypeNames            []string `json:"plugTypeNames"`
-	MaxPowerInKw             float64  `json:"maxPowerInKw"`
-	AlwaysOpen               bool     `json:"alwaysOpen"`
+	MaxPowerInKw             float64   `json:"maxPowerInKw"`
+	AlwaysOpen               bool      `json:"alwaysOpen"`
+	ViewPort                 *ViewPort `json:"viewPort"`
+}
+
+// ViewPort is the bounding box a clustered list item covers. Re-querying it
+// with grouping=false resolves the cluster into individual stations.
+type ViewPort struct {
+	LowerLeftLat  float64 `json:"lowerLeftLat"`
+	LowerLeftLon  float64 `json:"lowerLeftLon"`
+	UpperRightLat float64 `json:"upperRightLat"`
+	UpperRightLon float64 `json:"upperRightLon"`
 }
 
 // StationDetail is the /chargestations/{id} response: a Station plus per-EVSE

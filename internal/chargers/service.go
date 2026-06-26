@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/tamcore/voltpilot/internal/cache"
@@ -23,6 +24,15 @@ const (
 	defaultLimit    = 25
 	maxLimit        = 200
 	cacheTTL        = 45 * time.Second
+
+	// The EnBW API clusters dense areas even with grouping=false: a wide bbox
+	// returns "grouped" items with a null stationId and a viewPort instead of
+	// the individual stations. We resolve those by re-querying each cluster's
+	// viewPort (nearest-first, bounded, in parallel) so nearby stations are
+	// never hidden behind a cluster.
+	maxClusterExpansions = 24
+	expandConcurrency    = 6
+	expandDepth          = 2
 )
 
 // stationLister is the slice of the EnBW client this service needs.
@@ -176,12 +186,99 @@ func (s *Service) listCached(ctx context.Context, center geo.LatLng, radiusKm fl
 	if v, ok := s.cache.Get(key); ok {
 		return v, nil
 	}
-	stations, err := s.client.List(ctx, b, false)
+	stations, err := s.gather(ctx, b, center)
 	if err != nil {
 		return nil, err
 	}
 	s.cache.Set(key, stations)
 	return stations, nil
+}
+
+// gather fetches the bbox and resolves any clusters into individual stations
+// by expanding their viewPorts (nearest-first, bounded depth + count). It
+// returns deduplicated individual stations only.
+func (s *Service) gather(ctx context.Context, root geo.BBox, center geo.LatLng) ([]enbw.Station, error) {
+	first, err := s.client.List(ctx, root, false)
+	if err != nil {
+		return nil, err
+	}
+
+	byID := make(map[int]enbw.Station)
+	var clusters []enbw.Station
+	collect := func(sts []enbw.Station) {
+		for _, st := range sts {
+			if st.Grouped {
+				if st.ViewPort != nil {
+					clusters = append(clusters, st)
+				}
+				continue
+			}
+			if st.StationID != nil {
+				if _, ok := byID[*st.StationID]; !ok {
+					byID[*st.StationID] = st
+				}
+			}
+		}
+	}
+	collect(first)
+
+	left := maxClusterExpansions
+	for depth := 0; depth < expandDepth && len(clusters) > 0 && left > 0; depth++ {
+		sort.Slice(clusters, func(i, j int) bool {
+			di := geo.Distance(center, geo.LatLng{Lat: clusters[i].Lat, Lon: clusters[i].Lon})
+			dj := geo.Distance(center, geo.LatLng{Lat: clusters[j].Lat, Lon: clusters[j].Lon})
+			return di < dj
+		})
+		n := len(clusters)
+		if n > left {
+			n = left
+		}
+		batch := clusters[:n]
+		left -= n
+		clusters = nil // next-level clusters are re-collected from the results
+
+		for _, sts := range s.expandClusters(ctx, batch) {
+			collect(sts)
+		}
+	}
+
+	out := make([]enbw.Station, 0, len(byID))
+	for _, st := range byID {
+		out = append(out, st)
+	}
+	return out, nil
+}
+
+// expandClusters re-queries each cluster's viewPort in parallel (bounded
+// concurrency) and returns the per-cluster station lists. Failed expansions
+// yield nil and are simply skipped.
+func (s *Service) expandClusters(ctx context.Context, clusters []enbw.Station) [][]enbw.Station {
+	out := make([][]enbw.Station, len(clusters))
+	sem := make(chan struct{}, expandConcurrency)
+	var wg sync.WaitGroup
+	for i := range clusters {
+		vp := clusters[i].ViewPort
+		if vp == nil {
+			continue
+		}
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(idx int, vp enbw.ViewPort) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			b := geo.BBox{
+				MinLat: vp.LowerLeftLat,
+				MinLon: vp.LowerLeftLon,
+				MaxLat: vp.UpperRightLat,
+				MaxLon: vp.UpperRightLon,
+			}
+			if sts, err := s.client.List(ctx, b, false); err == nil {
+				out[idx] = sts
+			}
+		}(i, *vp)
+	}
+	wg.Wait()
+	return out
 }
 
 func toCharger(st enbw.Station, cur Current, available bool, center geo.LatLng) Charger {

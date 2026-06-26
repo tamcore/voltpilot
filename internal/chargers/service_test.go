@@ -3,6 +3,7 @@ package chargers
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/tamcore/voltpilot/internal/enbw"
@@ -152,6 +153,50 @@ func TestChargerDetail(t *testing.T) {
 	}
 	if !got.ChargePoints[0].Available || got.ChargePoints[0].Connectors[0].Current != CurrentDC {
 		t.Fatalf("connector classification wrong: %+v", got.ChargePoints[0])
+	}
+}
+
+// clusterLister returns a cluster for any wide bbox and the hidden individual
+// station only when queried within the cluster's viewPort — mimicking the
+// EnBW API's density clustering.
+type clusterLister struct {
+	mu    sync.Mutex
+	calls int
+}
+
+func (c *clusterLister) List(_ context.Context, b geo.BBox, _ bool) ([]enbw.Station, error) {
+	c.mu.Lock()
+	c.calls++
+	c.mu.Unlock()
+	vp := &enbw.ViewPort{LowerLeftLat: 49.81, LowerLeftLon: 9.96, UpperRightLat: 49.83, UpperRightLon: 9.99}
+	// Narrow (viewPort-sized) query → reveal the individual station.
+	if (b.MaxLat-b.MinLat) < 0.05 {
+		return []enbw.Station{{
+			StationID: iptr(1158054), Operator: "EnBW", OperatorCode: "DEEBW",
+			Lat: 49.82055, Lon: 9.97913, PlugTypes: []string{"CCS", "TYPE_2"}, MaxPowerInKw: 300,
+			NumberOfChargePoints: 9, AvailableChargePoints: 9, ShortAddress: sptr("Mainfrankenhöhe 12"),
+		}}, nil
+	}
+	// Wide query → the station is hidden inside a cluster.
+	return []enbw.Station{{Grouped: true, Operator: "EnBW", OperatorCode: "DEEBW", Lat: 49.816, Lon: 9.981, ViewPort: vp}}, nil
+}
+
+func (c *clusterLister) Detail(_ context.Context, _ int) (*enbw.StationDetail, error) {
+	return nil, ErrNotFound
+}
+
+func TestNearbyExpandsClusters(t *testing.T) {
+	cl := &clusterLister{}
+	svc := NewService(cl)
+	got, err := svc.Nearby(context.Background(), Query{Center: center(), OperatorCode: "DEEBW", RadiusKm: 25})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].ID != "1158054" {
+		t.Fatalf("expected the clustered Mainfrankenhöhe station to be revealed, got %+v", got)
+	}
+	if cl.calls < 2 {
+		t.Fatalf("expected at least one cluster-expansion call beyond the root, got %d", cl.calls)
 	}
 }
 
