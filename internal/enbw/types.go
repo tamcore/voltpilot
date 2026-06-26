@@ -7,18 +7,18 @@ package enbw
 // embedded base of a detail response. When the list is fetched with
 // grouping=true, clusters have Grouped=true and a nil StationID.
 type Station struct {
-	Grouped                  bool     `json:"grouped"`
-	StationID                *int     `json:"stationId"`
-	Operator                 string   `json:"operator"`
-	OperatorCode             string   `json:"operatorCode"`
-	ShortAddress             *string  `json:"shortAddress"`
-	Lat                      float64  `json:"lat"`
-	Lon                      float64  `json:"lon"`
-	NumberOfChargePoints     int      `json:"numberOfChargePoints"`
-	AvailableChargePoints    int      `json:"availableChargePoints"`
-	UnknownStateChargePoints int      `json:"unknownStateChargePoints"`
-	PlugTypes                []string `json:"plugTypes"`
-	PlugTypeNames            []string `json:"plugTypeNames"`
+	Grouped                  bool      `json:"grouped"`
+	StationID                *int      `json:"stationId"`
+	Operator                 string    `json:"operator"`
+	OperatorCode             string    `json:"operatorCode"`
+	ShortAddress             *string   `json:"shortAddress"`
+	Lat                      float64   `json:"lat"`
+	Lon                      float64   `json:"lon"`
+	NumberOfChargePoints     int       `json:"numberOfChargePoints"`
+	AvailableChargePoints    int       `json:"availableChargePoints"`
+	UnknownStateChargePoints int       `json:"unknownStateChargePoints"`
+	PlugTypes                []string  `json:"plugTypes"`
+	PlugTypeNames            []string  `json:"plugTypeNames"`
 	MaxPowerInKw             float64   `json:"maxPowerInKw"`
 	AlwaysOpen               bool      `json:"alwaysOpen"`
 	ViewPort                 *ViewPort `json:"viewPort"`

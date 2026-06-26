@@ -17,12 +17,13 @@ jobs:
         with:
           go-version: "1.26"
       - run: go vet ./...
-      - run: go test -race -coverprofile=coverage.out ./...
-      - name: Coverage gate (total >= 60%)
+      - run: go test -race ./...
+      - name: Coverage gate (internal/... >= 70%)
         run: |
+          go test -coverprofile=coverage.out ./internal/...
           pct=$(go tool cover -func=coverage.out | awk '/^total:/ {gsub(/%/,"",$3); print $3}')
-          echo "total coverage: ${pct}%"
-          awk -v p="$pct" 'BEGIN { exit (p+0 >= 60) ? 0 : 1 }'
+          echo "internal coverage: ${pct}%"
+          awk -v p="$pct" 'BEGIN { exit (p+0 >= 70) ? 0 : 1 }'
 
   web:
     runs-on: ubuntu-latest

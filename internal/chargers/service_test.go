@@ -170,7 +170,7 @@ func (c *clusterLister) List(_ context.Context, b geo.BBox, _ bool) ([]enbw.Stat
 	c.mu.Unlock()
 	vp := &enbw.ViewPort{LowerLeftLat: 49.81, LowerLeftLon: 9.96, UpperRightLat: 49.83, UpperRightLon: 9.99}
 	// Narrow (viewPort-sized) query → reveal the individual station.
-	if (b.MaxLat-b.MinLat) < 0.05 {
+	if (b.MaxLat - b.MinLat) < 0.05 {
 		return []enbw.Station{{
 			StationID: iptr(1158054), Operator: "EnBW", OperatorCode: "DEEBW",
 			Lat: 49.82055, Lon: 9.97913, PlugTypes: []string{"CCS", "TYPE_2"}, MaxPowerInKw: 300,
