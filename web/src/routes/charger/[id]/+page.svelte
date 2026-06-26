@@ -146,6 +146,11 @@
 
 	<div class="section-label">Navigate</div>
 	<div class="nav-buttons">
+		{#if routeStatus === 'route'}
+			<a class="btn inapp" href={`/charger/${detail.id}/navigate`} data-testid="start-nav">
+				▶ In-app navigation
+			</a>
+		{/if}
 		<a class="btn primary" href={detail.deep_links.google} target="_blank" rel="noopener">Google Maps</a>
 		<a class="btn" href={detail.deep_links.apple} target="_blank" rel="noopener">Apple Maps</a>
 		<a class="btn" href={detail.deep_links.waze} target="_blank" rel="noopener">Waze</a>
@@ -263,6 +268,11 @@
 		background: var(--accent);
 		color: var(--bg);
 		border-color: var(--accent);
+	}
+	.btn.inapp {
+		background: color-mix(in srgb, var(--cool) 22%, var(--surface));
+		border-color: var(--cool);
+		color: var(--text-strong);
 	}
 	.cps {
 		list-style: none;

@@ -23,6 +23,7 @@ It's a PWA backed by a small Go service that proxies the public [EnBW e-mobility
 - **Filters**: available-only, and AC / DC / all.
 - **One-tap navigation** via Google / Apple / Waze deep links.
 - **On-device route preview** — for chargers within 5 km, a route line + road distance/ETA computed client-side from OpenStreetMap (Overpass), no routing service or key. Straight-line fallback beyond 5 km.
+- **In-app navigation (last-mile)** — optional full-screen turn-by-turn for ≤5 km trips: heading-up map, turn instructions with street names, voice guidance (Web Speech), auto-reroute, screen wake-lock. All client-side. Screen-on / phone-in-hand only (PWA limitation) — the deep-link buttons remain for full background nav.
 - **Installable PWA** with geolocation; works on mobile.
 
 ## Architecture

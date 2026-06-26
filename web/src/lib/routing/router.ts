@@ -13,7 +13,7 @@ export type OverpassElement = {
 	tags?: Record<string, string>;
 };
 
-export type Edge = { to: number; dist: number };
+export type Edge = { to: number; dist: number; name?: string };
 export type Graph = {
 	coords: Map<number, LatLng>;
 	adj: Map<number, Edge[]>;
@@ -53,23 +53,24 @@ export function buildGraph(elements: OverpassElement[]): Graph {
 	}
 
 	const adj = new Map<number, Edge[]>();
-	const link = (a: number, b: number) => {
+	const link = (a: number, b: number, name?: string) => {
 		const ca = coords.get(a);
 		const cb = coords.get(b);
 		if (!ca || !cb) return;
 		const d = haversineKm(ca, cb);
 		if (!adj.has(a)) adj.set(a, []);
-		adj.get(a)!.push({ to: b, dist: d });
+		adj.get(a)!.push({ to: b, dist: d, name });
 	};
 
 	for (const el of elements) {
 		if (el.type !== 'way' || !el.nodes || !el.tags?.highway) continue;
 		const { forward, backward } = oneWayDirections(el.tags);
+		const name = el.tags.name || el.tags.ref || undefined;
 		for (let i = 0; i + 1 < el.nodes.length; i++) {
 			const a = el.nodes[i];
 			const b = el.nodes[i + 1];
-			if (forward) link(a, b);
-			if (backward) link(b, a);
+			if (forward) link(a, b, name);
+			if (backward) link(b, a, name);
 		}
 	}
 	return { coords, adj };
@@ -182,7 +183,9 @@ class MinHeap {
 // route returns a polyline (start → road network → goal) or null when no path
 // exists. The user/charger points are prepended/appended so the line connects
 // visually even though they sit off the graph nodes.
-export function route(graph: Graph, start: LatLng, goal: LatLng): LatLng[] | null {
+// aStar returns the sequence of graph node ids from start to goal (snapped into
+// the main component), or null when unreachable.
+function aStar(graph: Graph, start: LatLng, goal: LatLng): number[] | null {
 	// Snap endpoints into the main connected component so we don't anchor on an
 	// isolated stub (which would make A* fail even though a route exists).
 	const comp = mainComponent(graph);
@@ -199,7 +202,16 @@ export function route(graph: Graph, start: LatLng, goal: LatLng): LatLng[] | nul
 
 	while (open.size > 0) {
 		const current = open.pop()!;
-		if (current === g) return reconstruct(graph, cameFrom, g, start, goal);
+		if (current === g) {
+			const nodes = [g];
+			let cur = g;
+			while (cameFrom.has(cur)) {
+				cur = cameFrom.get(cur)!;
+				nodes.push(cur);
+			}
+			nodes.reverse();
+			return nodes;
+		}
 		if (closed.has(current)) continue;
 		closed.add(current);
 
@@ -216,22 +228,35 @@ export function route(graph: Graph, start: LatLng, goal: LatLng): LatLng[] | nul
 	return null;
 }
 
-function reconstruct(
-	graph: Graph,
-	cameFrom: Map<number, number>,
-	goalNode: number,
-	start: LatLng,
-	goal: LatLng
-): LatLng[] {
-	const nodes: number[] = [goalNode];
-	let cur = goalNode;
-	while (cameFrom.has(cur)) {
-		cur = cameFrom.get(cur)!;
-		nodes.push(cur);
-	}
-	nodes.reverse();
-	const line = nodes.map((id) => graph.coords.get(id)!);
-	return [start, ...line, goal];
+// route returns a polyline (start → road network → goal) or null when no path
+// exists. The user/charger points are prepended/appended so the line connects
+// visually even though they sit off the graph nodes.
+export function route(graph: Graph, start: LatLng, goal: LatLng): LatLng[] | null {
+	const nodes = aStar(graph, start, goal);
+	if (!nodes) return null;
+	return [start, ...nodes.map((id) => graph.coords.get(id)!), goal];
+}
+
+// RoutedPath carries the geometry plus the street name of the segment that
+// leads into each point (names[i] = name of segment points[i-1] → points[i]).
+export type RoutedPath = { points: LatLng[]; names: (string | undefined)[] };
+
+function edgeName(graph: Graph, a: number, b: number): string | undefined {
+	for (const e of graph.adj.get(a) ?? []) if (e.to === b) return e.name;
+	return undefined;
+}
+
+// routeWithNames is like route() but also returns the street name per segment,
+// used to build turn-by-turn maneuvers.
+export function routeWithNames(graph: Graph, start: LatLng, goal: LatLng): RoutedPath | null {
+	const nodes = aStar(graph, start, goal);
+	if (!nodes) return null;
+	const points: LatLng[] = [start, ...nodes.map((id) => graph.coords.get(id)!), goal];
+	const names: (string | undefined)[] = [undefined]; // start → first node: unnamed
+	for (let i = 0; i + 1 < nodes.length; i++) names.push(edgeName(graph, nodes[i], nodes[i + 1]));
+	names.push(undefined); // last node → goal: unnamed
+	// names has points.length entries (index 0 unused as a "segment into start").
+	return { points, names };
 }
 
 export function polylineKm(pts: LatLng[]): number {
