@@ -1,0 +1,72 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/tamcore/voltpilot
+  tag: ""
+  digest: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 300m
+    memory: 256Mi
+
+# Pod-level security context. The image runs a static Go binary, so
+# nonroot + read-only rootfs work out of the box.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  className: nginx
+  certManagerIssuer: letsencrypt-prod
+  annotations: {}
+  # Override hosts/tls at deploy time, e.g.
+  #   --set ingress.hosts[0]=<your-fqdn>
+  #   --set ingress.tls[0].hosts[0]=<your-fqdn>
+  hosts: []
+  tls: []
+
+# Application environment. The EnBW subscription key is scraped at runtime;
+# optionally seed it via an env var or a Secret (see enbw.* below).
+env:
+  VOLTPILOT_LISTEN_ADDR: ":8080"
+  VOLTPILOT_KEY_REFRESH_INTERVAL: "6h"
+
+# Optional seed for the EnBW subscription key. Prefer leaving this empty and
+# letting the app scrape the key. If set, never commit the value — pass it at
+# deploy time or point existingSecret at a Secret you manage.
+enbw:
+  keySeed: ""
+  existingSecret: ""
+  secretKey: enbw-key
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+podLabels: {}
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,59 @@
+version: 2
+
+before:
+  hooks:
+    - sh -c "cd web && npm ci"
+    - sh -c "cd web && npm run build"
+    - go mod tidy
+
+builds:
+  - id: voltpilot
+    main: ./cmd/server
+    binary: voltpilot
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -tags=prodfrontend
+    ldflags:
+      - -s -w
+
+archives:
+  - id: voltpilot-archive
+    formats:
+      - tar.gz
+    name_template: "voltpilot_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Tag }}-next"
+
+changelog:
+  use: git
+  sort: asc
+
+dockers_v2:
+  - ids: [voltpilot]
+    images:
+      - "ghcr.io/tamcore/voltpilot"
+    tags:
+      - "{{ .Tag }}"
+      - latest
+    dockerfile: Dockerfile
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.title": "{{.ProjectName}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.version": "{{.Version}}"
+      "org.opencontainers.image.source": "https://github.com/tamcore/voltpilot"
+      "org.opencontainers.image.description": "voltpilot - nearest available charger of your chosen CPO"

@@ -1,0 +1,211 @@
+@import '@fontsource/antonio/400.css';
+@import '@fontsource/antonio/600.css';
+@import '@fontsource/antonio/700.css';
+@import '@fontsource/geist/400.css';
+@import '@fontsource/geist/500.css';
+@import '@fontsource/geist/600.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/700.css';
+
+:root {
+	color-scheme: dark;
+
+	/* DARK — deep electric-night blue. */
+	--bg: #070b16;
+	--bg-elev: #0c1322;
+	--surface: #111a2e;
+	--surface-2: #18233c;
+	--border: #1f2c47;
+	--border-strong: #2c3d62;
+
+	--text: #eef2fb;
+	--text-strong: #ffffff;
+	--muted: #93a0bd;
+	--muted-2: #5f6c8c;
+
+	/* Electric teal/blue brand; green reserved for "available". */
+	--accent: #34e0e0;
+	--accent-strong: #14b9c4;
+	--accent-glow: rgba(52, 224, 224, 0.18);
+	--cool: #4d7cff;
+	--ok: #2ee27a;
+	--ok-glow: rgba(46, 226, 122, 0.18);
+	--amber: #ffb547;
+	--danger: #ff6470;
+
+	--bg-radial-top: #0d1a36;
+	--bg-radial-bot: #0a1226;
+}
+
+@media (prefers-color-scheme: light) {
+	:root:not([data-theme]) {
+		color-scheme: light;
+		--bg: #eef1f7;
+		--bg-elev: #ffffff;
+		--surface: #ffffff;
+		--surface-2: #f4f6fb;
+		--border: #dfe3ee;
+		--border-strong: #c3c9da;
+		--text: #0b1322;
+		--text-strong: #000000;
+		--muted: #58637c;
+		--muted-2: #8a96b0;
+		--accent: #0d9aa6;
+		--accent-strong: #0a7d88;
+		--accent-glow: rgba(13, 154, 166, 0.2);
+		--cool: #1d4ed8;
+		--ok: #16a34a;
+		--ok-glow: rgba(22, 163, 74, 0.2);
+		--amber: #d97706;
+		--danger: #dc2626;
+		--bg-radial-top: #fbfcff;
+		--bg-radial-bot: #e7ebf5;
+	}
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+	--bg: #070b16;
+	--bg-elev: #0c1322;
+	--surface: #111a2e;
+	--surface-2: #18233c;
+	--border: #1f2c47;
+	--border-strong: #2c3d62;
+	--text: #eef2fb;
+	--text-strong: #ffffff;
+	--muted: #93a0bd;
+	--muted-2: #5f6c8c;
+	--accent: #34e0e0;
+	--accent-strong: #14b9c4;
+	--accent-glow: rgba(52, 224, 224, 0.18);
+	--cool: #4d7cff;
+	--ok: #2ee27a;
+	--ok-glow: rgba(46, 226, 122, 0.18);
+	--amber: #ffb547;
+	--danger: #ff6470;
+	--bg-radial-top: #0d1a36;
+	--bg-radial-bot: #0a1226;
+}
+
+:root[data-theme='light'] {
+	color-scheme: light;
+	--bg: #eef1f7;
+	--bg-elev: #ffffff;
+	--surface: #ffffff;
+	--surface-2: #f4f6fb;
+	--border: #dfe3ee;
+	--border-strong: #c3c9da;
+	--text: #0b1322;
+	--text-strong: #000000;
+	--muted: #58637c;
+	--muted-2: #8a96b0;
+	--accent: #0d9aa6;
+	--accent-strong: #0a7d88;
+	--accent-glow: rgba(13, 154, 166, 0.2);
+	--cool: #1d4ed8;
+	--ok: #16a34a;
+	--ok-glow: rgba(22, 163, 74, 0.2);
+	--amber: #d97706;
+	--danger: #dc2626;
+	--bg-radial-top: #fbfcff;
+	--bg-radial-bot: #e7ebf5;
+}
+
+:root {
+	--font-display: 'Antonio', 'Saira Condensed', system-ui, sans-serif;
+	--font-body: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+	--radius-card: 16px;
+	--radius-pill: 999px;
+	--radius-sm: 8px;
+	--ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+	--ease-spring: cubic-bezier(0.22, 1.4, 0.4, 1);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	font-family: var(--font-body);
+	background:
+		radial-gradient(80% 60% at 50% 0%, var(--bg-radial-top) 0%, transparent 70%),
+		radial-gradient(60% 40% at 50% 110%, var(--bg-radial-bot) 0%, transparent 70%),
+		var(--bg);
+	background-attachment: fixed;
+	color: var(--text);
+	min-height: 100dvh;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	transition: background 0.3s var(--ease-out), color 0.3s var(--ease-out);
+}
+
+button {
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+	background: none;
+	border: 0;
+}
+
+a {
+	color: var(--accent);
+}
+
+::selection {
+	background: var(--accent);
+	color: var(--bg);
+}
+
+.display {
+	font-family: var(--font-display);
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+.mono {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
+.section-label {
+	font-family: var(--font-display);
+	font-weight: 600;
+	font-size: 0.78rem;
+	letter-spacing: 0.22em;
+	text-transform: uppercase;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 1.25rem 0 0.5rem;
+}
+.section-label::before {
+	content: '';
+	display: block;
+	width: 1.5rem;
+	height: 2px;
+	background: var(--accent);
+}
+
+@keyframes rise {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 0.55;
+	}
+	50% {
+		opacity: 1;
+	}
+}

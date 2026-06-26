@@ -1,0 +1,11 @@
+apiVersion: v2
+name: voltpilot
+description: Nearest available charger of your chosen CPO - PWA + Go backend over the EnBW public API.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/tamcore/voltpilot
+sources:
+  - https://github.com/tamcore/voltpilot
+maintainers:
+  - name: tamcore

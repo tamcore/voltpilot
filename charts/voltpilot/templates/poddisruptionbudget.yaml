@@ -1,0 +1,14 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "voltpilot.fullname" . }}
+  labels:
+    {{- include "voltpilot.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "voltpilot.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: app
+{{- end }}

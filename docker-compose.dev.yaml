@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: app
+    environment:
+      VOLTPILOT_LISTEN_ADDR: ":8080"
+      # The container scrapes the live subscription key on startup. A seed can
+      # be injected for offline/dev via VOLTPILOT_ENBW_KEY.
+      VOLTPILOT_ENBW_KEY: "${VOLTPILOT_ENBW_KEY:-}"
+    ports:
+      - "8080:8080"
