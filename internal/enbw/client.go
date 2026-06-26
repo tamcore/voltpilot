@@ -17,6 +17,9 @@ const (
 	defaultBaseURL = "https://enbw-emp.azure-api.net/emobility-public-api/api/v1"
 	subKeyHeader   = "Ocp-Apim-Subscription-Key"
 	requestTimeout = 15 * time.Second
+
+	// browserUserAgent is required: Azure APIM rejects the default Go UA.
+	browserUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:152.0) Gecko/20100101 Firefox/152.0"
 )
 
 // keyProvider supplies (and can refresh) the subscription key. *KeyManager
@@ -102,8 +105,14 @@ func (c *Client) do(ctx context.Context, u string) ([]byte, error) {
 	}
 	req.Header.Set(subKeyHeader, key)
 	req.Header.Set("Accept", "application/json")
-	// The API gates some responses on a known Origin.
+	// Azure APIM blocks the default Go user-agent and gates responses on a
+	// browser-like Origin + Referer. All three are required together — drop
+	// any one and the API returns 403 (which looks like, but is not, a
+	// throttle). See internal/enbw client tests / AGENTS.md.
+	req.Header.Set("User-Agent", browserUserAgent)
 	req.Header.Set("Origin", "https://www.enbw.com")
+	req.Header.Set("Referer", "https://www.enbw.com/")
+	req.Header.Set("Accept-Language", "de")
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("enbw: request failed: %w", err)
