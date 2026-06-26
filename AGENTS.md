@@ -27,6 +27,7 @@ voltpilot is a PWA + Go backend that gets a user to the nearest available charge
 - TDD where practical. Run `make test` and `cd web && npm run check && npm run test:unit` before pushing.
 - The EnBW API only filters spatially (bounding box). Operator / AC-DC / availability filtering is done in `internal/chargers`. AC/DC is inferred from plug types + power at list level; the exact `tariffGroup` (AC_CHARGER/DC_CHARGER) is used only on the detail view.
 - HTTP 403 from EnBW means throttle, not auth failure — back off, don't hammer.
+- Route preview (`web/src/lib/routing/`) is client-side A* over OSM roads fetched from public Overpass endpoints, capped at 5 km trips. The browser calls Overpass directly, so those hosts must stay in the `connect-src` CSP in `internal/api/middleware`. Pure routing logic is unit-tested (`router.test.ts`); endpoints snap into the largest connected component to avoid dead stubs.
 
 ## Screenshots (keep in sync with the UI)
 

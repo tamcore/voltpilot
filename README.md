@@ -22,6 +22,7 @@ It's a PWA backed by a small Go service that proxies the public [EnBW e-mobility
 - **Nearest-first list** of that CPO's chargers, with an optional map view.
 - **Filters**: available-only, and AC / DC / all.
 - **One-tap navigation** via Google / Apple / Waze deep links.
+- **On-device route preview** — for chargers within 5 km, a route line + road distance/ETA computed client-side from OpenStreetMap (Overpass), no routing service or key. Straight-line fallback beyond 5 km.
 - **Installable PWA** with geolocation; works on mobile.
 
 ## Architecture
@@ -35,6 +36,7 @@ internal/
   cache/    45s in-process TTL cache (no Redis / no database)
   geo/      haversine distance + bounding-box derivation
   api/      chi router, handlers, middleware
+web/src/lib/routing/  client-side A* over OSM/Overpass for the route preview
 charts/     Helm chart (nginx ingress + cert-manager)
 ```
 

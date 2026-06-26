@@ -4,6 +4,9 @@
 	import { fetchChargerDetail, ApiError } from '$lib/api/client';
 	import type { ChargerDetail } from '$lib/types/api';
 	import CurrentBadge from '$lib/components/CurrentBadge.svelte';
+	import RouteMap from '$lib/components/RouteMap.svelte';
+	import { fetchRoadGraph, bboxFor } from '$lib/routing/overpass';
+	import { route as computePath, polylineKm, haversineKm, type LatLng } from '$lib/routing/router';
 
 	let detail = $state<ChargerDetail | null>(null);
 	let error = $state<string | null>(null);
@@ -33,6 +36,54 @@
 			: detail?.distanceKm ?? null
 	);
 
+	// --- Client-side route preview (Layer 1, Overpass) ---
+	const MAX_ROUTE_KM = 5; // beyond this we don't fetch a graph; show straight line
+	const URBAN_KMH = 30; // rough ETA assumption for short urban hops
+
+	let routePts = $state<LatLng[] | null>(null);
+	let roadKm = $state<number | null>(null);
+	let routeStatus = $state<'idle' | 'loading' | 'route' | 'straight' | 'error'>('idle');
+	let routedFor = $state<string | null>(null);
+	let routeAbort: AbortController | null = null;
+
+	async function buildRoute(user: LatLng, target: LatLng) {
+		if (haversineKm(user, target) > MAX_ROUTE_KM) {
+			routePts = null;
+			roadKm = null;
+			routeStatus = 'straight';
+			return;
+		}
+		routeStatus = 'loading';
+		routePts = null;
+		roadKm = null;
+		routeAbort?.abort();
+		routeAbort = new AbortController();
+		try {
+			const graph = await fetchRoadGraph(bboxFor(user, target), routeAbort.signal);
+			const line = computePath(graph, user, target);
+			if (line) {
+				routePts = line;
+				roadKm = polylineKm(line);
+				routeStatus = 'route';
+			} else {
+				routeStatus = 'straight';
+			}
+		} catch (err) {
+			if (err instanceof DOMException && err.name === 'AbortError') return;
+			routeStatus = 'error';
+		}
+	}
+
+	// Compute the route once per charger, as soon as we have a live position.
+	$effect(() => {
+		if (detail && $geo.status === 'live' && detail.id !== routedFor) {
+			routedFor = detail.id;
+			void buildRoute({ lat: $geo.lat, lon: $geo.lon }, { lat: detail.lat, lon: detail.lon });
+		}
+	});
+
+	const etaMin = $derived(roadKm !== null ? Math.max(1, Math.round((roadKm / URBAN_KMH) * 60)) : null);
+
 	function statusLabel(s: string): string {
 		const v = s.toUpperCase();
 		if (v === 'AVAILABLE') return 'Available';
@@ -55,6 +106,25 @@
 		<h1>{detail.operator}</h1>
 		{#if detail.address}<p class="addr">{detail.address}</p>{/if}
 	</header>
+
+	{#if $geo.status === 'live'}
+		<RouteMap
+			user={{ lat: $geo.lat, lon: $geo.lon }}
+			target={{ lat: detail.lat, lon: detail.lon }}
+			route={routePts}
+		/>
+		<p class="route-info" data-testid="route-info">
+			{#if routeStatus === 'route'}
+				<strong class="mono">{roadKm!.toFixed(1)} km</strong> by road · ~{etaMin} min drive
+			{:else if routeStatus === 'loading'}
+				Calculating route…
+			{:else if routeStatus === 'straight'}
+				Straight-line preview{liveDistanceKm !== null ? ` (${liveDistanceKm.toFixed(1)} km direct)` : ''} — beyond {MAX_ROUTE_KM} km, use the nav buttons.
+			{:else if routeStatus === 'error'}
+				Couldn't load the on-device route — straight line shown.
+			{/if}
+		</p>
+	{/if}
 
 	<div class="stats">
 		<div class="stat">
@@ -128,6 +198,15 @@
 	.addr {
 		color: var(--muted);
 		margin: 0.25rem 0 0;
+	}
+	.route-info {
+		margin: 0 0 1rem;
+		font-size: 0.9rem;
+		color: var(--muted);
+	}
+	.route-info strong {
+		color: var(--accent);
+		font-weight: 700;
 	}
 	.stats {
 		display: flex;
