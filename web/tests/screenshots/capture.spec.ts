@@ -1,4 +1,4 @@
-import { test, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 // README screenshots, captured against deterministic mocked data so the result
 // is stable across runs and needs no live EnBW access. Base location: Munich.
@@ -80,34 +80,13 @@ function detail() {
 	};
 }
 
-// A small synthetic road graph (nodes interpolated between the Munich user
-// position and charger 200001) so the detail-page route preview renders
-// deterministically without hitting live Overpass.
-function overpassFixture() {
-	const from = { lat: 48.137401, lon: 11.575879 };
-	const to = { lat: 48.1372, lon: 11.5648 };
-	const N = 8;
-	const elements: Array<Record<string, unknown>> = [];
-	const ids: number[] = [];
-	for (let i = 0; i <= N; i++) {
-		const id = 1000 + i;
-		ids.push(id);
-		elements.push({
-			type: 'node',
-			id,
-			lat: from.lat + ((to.lat - from.lat) * i) / N,
-			lon: from.lon + ((to.lon - from.lon) * i) / N
-		});
-	}
-	elements.push({ type: 'way', id: 5000, nodes: ids, tags: { highway: 'residential' } });
-	return { elements };
-}
-
 async function mockApi(page: Page) {
 	await page.route('**/api/cpos**', (r) => r.fulfill({ json: CPOS }));
 	await page.route('**/api/chargers?**', (r) => r.fulfill({ json: chargers() }));
 	await page.route('**/api/chargers/200001**', (r) => r.fulfill({ json: detail() }));
-	await page.route('**/api/interpreter**', (r) => r.fulfill({ json: overpassFixture() }));
+	// Overpass is intentionally NOT mocked: the detail shot uses the real road
+	// graph so the route preview shows an actual street path, not a straight
+	// line. Roads don't change, so the result is stable across runs.
 }
 
 test('01 — CPO picker', async ({ page }) => {
@@ -136,7 +115,9 @@ test('03 — charger detail', async ({ page }) => {
 	await page.goto('/charger/200001');
 	await page.getByRole('link', { name: 'Google Maps' }).waitFor();
 	await page.getByTestId('route-map').waitFor();
-	// Let the route compute + map tiles settle for a clean shot.
-	await page.waitForTimeout(2500);
+	// Wait for the real Overpass route to finish computing (not "Calculating…").
+	await expect(page.getByTestId('route-info')).toContainText('by road', { timeout: 30_000 });
+	// Let map tiles settle for a clean shot.
+	await page.waitForTimeout(1500);
 	await page.screenshot({ path: `${OUT}/detail.png` });
 });
