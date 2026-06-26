@@ -6,6 +6,16 @@ Pick your CPO once — voltpilot remembers it and, on every return visit, drops 
 
 It's a PWA backed by a small Go service that proxies the public [EnBW e-mobility API](https://www.enbw.com/elektromobilitaet/) (a roaming aggregator covering many CPOs).
 
+<p align="center">
+  <img src="docs/screenshots/picker.png" alt="Pick your charge point operator — remembered for next time" width="250" />
+  &nbsp;
+  <img src="docs/screenshots/list.png" alt="That CPO's chargers near you, nearest-first, filterable by availability and AC/DC" width="250" />
+  &nbsp;
+  <img src="docs/screenshots/detail.png" alt="Charger detail: live availability, connectors, and one-tap Google/Apple/Waze navigation" width="250" />
+</p>
+
+<p align="center"><sub>Example location: Munich. Screenshots are generated automatically — see <a href="#screenshots">Screenshots</a>.</sub></p>
+
 ## Features
 
 - **Pick a CPO, remembered for next time** — first launch lists operators near you; your choice is stored locally.
@@ -62,6 +72,16 @@ make test                 # Go unit tests + coverage
 cd web && npm run test:unit
 cd web && npx playwright test   # e2e (mocks /api, fully offline)
 ```
+
+## Screenshots
+
+The README screenshots are generated, not hand-captured, so they stay in sync with the UI:
+
+```sh
+cd web && npm run screenshots
+```
+
+This builds the app, serves it with `vite preview`, and drives Chromium (mobile viewport, Munich geolocation, deterministic mocked `/api` data) via Playwright, writing `docs/screenshots/{picker,list,detail}.png`. Re-run it after any change that affects the UI and commit the updated images. Capture logic: `web/tests/screenshots/capture.spec.ts` + `web/playwright.screenshots.config.ts`.
 
 ## Configuration
 
