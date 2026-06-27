@@ -23,10 +23,10 @@
 			[center.lat, center.lon],
 			12
 		);
-		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-			maxZoom: 19,
-			attribution: '© OpenStreetMap'
-		}).addTo(map);
+		L.tileLayer(
+			'https://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web_grau/default/WEBMERCATOR/{z}/{y}/{x}.png',
+			{ maxZoom: 18, attribution: '© BKG (TopPlusOpen)' }
+		).addTo(map);
 		L.circleMarker([center.lat, center.lon], {
 			radius: 6,
 			color: '#4d7cff',

@@ -71,10 +71,10 @@
 	onMount(async () => {
 		L = (await import('leaflet')).default;
 		map = L.map(el, { zoomControl: false, attributionControl: true, dragging: false, keyboard: false });
-		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-			maxZoom: 19,
-			attribution: '© OSM'
-		}).addTo(map);
+		L.tileLayer(
+			'https://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web_grau/default/WEBMERCATOR/{z}/{y}/{x}.png',
+			{ maxZoom: 18, attribution: '© BKG' }
+		).addTo(map);
 		map.setView([0, 0], 17);
 		setTimeout(() => map && map.invalidateSize(), 50);
 		void requestWakeLock();

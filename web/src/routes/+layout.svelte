@@ -33,7 +33,7 @@
 <footer class="app-footer">
 	<span>Data: EnBW EMP</span>
 	<span class="dot">·</span>
-	<span>OSM map tiles</span>
+	<span>Map © BKG</span>
 </footer>
 
 <style>

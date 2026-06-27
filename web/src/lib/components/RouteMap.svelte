@@ -20,10 +20,10 @@
 	onMount(async () => {
 		L = (await import('leaflet')).default;
 		map = L.map(el, { zoomControl: false, attributionControl: true, dragging: true });
-		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-			maxZoom: 19,
-			attribution: '© OpenStreetMap'
-		}).addTo(map);
+		L.tileLayer(
+			'https://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web_grau/default/WEBMERCATOR/{z}/{y}/{x}.png',
+			{ maxZoom: 18, attribution: '© BKG (TopPlusOpen)' }
+		).addTo(map);
 		L.circleMarker([user.lat, user.lon], {
 			radius: 6,
 			color: '#4d7cff',

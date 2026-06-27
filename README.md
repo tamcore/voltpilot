@@ -97,7 +97,7 @@ This builds the app, serves it with `vite preview`, and drives Chromium (mobile 
 
 ## Data & credits
 
-Charge-point data from the EnBW e-mobility public API. Map tiles © OpenStreetMap contributors. voltpilot is an independent hobby project and is not affiliated with EnBW.
+Charge-point data from the EnBW e-mobility public API. Routing data © OpenStreetMap contributors (via Overpass). Map tiles: BKG TopPlusOpen © Bundesamt für Kartographie und Geodäsie (dl-de/by-2.0) — EU-hosted. voltpilot is an independent hobby project and is not affiliated with EnBW.
 
 ## License
 
