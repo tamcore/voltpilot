@@ -2,7 +2,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { onMount, onDestroy } from 'svelte';
-	import { geo } from '$lib/stores/geo';
+	import { geo, type GeoState } from '$lib/stores/geo';
 	import { fetchChargerDetail } from '$lib/api/client';
 	import { fetchRoadGraph, bboxFor } from '$lib/routing/overpass';
 	import { routeWithNames, haversineKm, type LatLng } from '$lib/routing/router';
@@ -67,6 +67,7 @@
 		setTimeout(() => map && map.invalidateSize(), 50);
 		void requestWakeLock();
 		document.addEventListener('visibilitychange', onVisibility);
+		geoUnsub = geo.subscribe(onGeo);
 	});
 
 	function drawRoute() {
@@ -96,6 +97,8 @@
 			const d = await fetchChargerDetail(id, pos);
 			target = { lat: d.lat, lon: d.lon };
 			operator = d.operator;
+			// Kick off routing immediately rather than waiting for the next fix.
+			if (status === 'locating') void computeRoute(pos, target);
 		} catch {
 			status = 'error';
 		} finally {
@@ -178,9 +181,11 @@
 		recenter(snap.snapped);
 	}
 
-	// Drive the whole flow off geolocation updates.
-	$effect(() => {
-		const s = $geo;
+	// Drive the whole flow off geolocation updates. Use an explicit store
+	// subscription (not $effect) so every watchPosition tick is handled — the
+	// same pattern the charger poller uses.
+	let geoUnsub: (() => void) | null = null;
+	function onGeo(s: GeoState) {
 		if (s.status !== 'live') return;
 		const pos = { lat: s.lat, lon: s.lon };
 		if (!target) {
@@ -192,7 +197,7 @@
 			return;
 		}
 		if (status === 'navigating' || status === 'arrived') update(pos);
-	});
+	}
 
 	// --- Wake lock ---
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -227,6 +232,8 @@
 	};
 
 	onDestroy(() => {
+		geoUnsub?.();
+		geoUnsub = null;
 		if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibility);
 		try {
 			wakeLock?.release?.();
