@@ -17,6 +17,7 @@
 		type Maneuver,
 		type TurnType
 	} from '$lib/routing/navigation';
+	import { compass } from '$lib/sensors/compass';
 	import 'leaflet/dist/leaflet.css';
 
 	const URBAN_KMH = 30;
@@ -37,6 +38,9 @@
 	let etaMin = $state<number | null>(null);
 	let course = $state(0);
 	let muted = $state(false);
+	let compassOn = $state(false);
+	const compassSupported = compass.supported;
+	let compassUnsub: (() => void) | null = null;
 
 	let points: LatLng[] = [];
 	let cum: number[] = [];
@@ -68,7 +72,20 @@
 		void requestWakeLock();
 		document.addEventListener('visibilitychange', onVisibility);
 		geoUnsub = geo.subscribe(onGeo);
+		// Compass heading (when enabled) overrides the GPS-derived course.
+		compassUnsub = compass.subscribe((h) => {
+			if (compassOn && h !== null) course = h;
+		});
 	});
+
+	async function toggleCompass() {
+		if (compassOn) {
+			compass.stop();
+			compassOn = false;
+			return;
+		}
+		compassOn = await compass.enable();
+	}
 
 	function drawRoute() {
 		if (!map || !L) return;
@@ -142,7 +159,8 @@
 	function update(pos: LatLng) {
 		if (!points.length || !target) return;
 
-		if (lastPos && haversineKm(lastPos, pos) * 1000 > 3) course = bearing(lastPos, pos);
+		// GPS-derived course only when the compass isn't driving rotation.
+		if (!compassOn && lastPos && haversineKm(lastPos, pos) * 1000 > 3) course = bearing(lastPos, pos);
 		lastPos = pos;
 
 		const snap = snapToRoute(points, cum, pos);
@@ -234,6 +252,9 @@
 	onDestroy(() => {
 		geoUnsub?.();
 		geoUnsub = null;
+		compassUnsub?.();
+		compassUnsub = null;
+		compass.stop();
 		if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibility);
 		try {
 			wakeLock?.release?.();
@@ -279,9 +300,23 @@
 		{/if}
 	</div>
 
-	<button class="mute" onclick={() => (muted = !muted)} aria-label="Toggle voice" title="Toggle voice">
-		{muted ? '🔇' : '🔊'}
-	</button>
+	<div class="tools">
+		{#if compassSupported}
+			<button
+				class="tool"
+				class:active={compassOn}
+				onclick={toggleCompass}
+				aria-label="Toggle compass heading"
+				title={compassOn ? 'Compass on (heading-up)' : 'Use compass for heading'}
+				data-testid="compass-toggle"
+			>
+				🧭
+			</button>
+		{/if}
+		<button class="tool" onclick={() => (muted = !muted)} aria-label="Toggle voice" title="Toggle voice">
+			{muted ? '🔇' : '🔊'}
+		</button>
+	</div>
 
 	<div class="bottom">
 		<div class="trip">
@@ -374,17 +409,26 @@
 		color: var(--muted);
 		margin-top: 0.15rem;
 	}
-	.mute {
+	.tools {
 		position: absolute;
-		top: 0.75rem;
+		bottom: 5.5rem;
 		right: 0.75rem;
 		z-index: 70;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.tool {
 		width: 2.75rem;
 		height: 2.75rem;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--bg-elev) 90%, transparent);
 		border: 1px solid var(--border-strong);
 		font-size: 1.1rem;
+	}
+	.tool.active {
+		border-color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 22%, var(--bg-elev));
 	}
 	.bottom {
 		position: absolute;
