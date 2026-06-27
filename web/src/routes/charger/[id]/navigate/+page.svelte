@@ -11,6 +11,7 @@
 		cumulativeKm,
 		snapToRoute,
 		nextManeuver,
+		bearing,
 		instructionText,
 		formatDistance,
 		type Maneuver,
@@ -37,9 +38,18 @@
 	let etaMin = $state<number | null>(null);
 	let course = $state(0);
 	let muted = $state(false);
-	let compassOn = $state(false);
+	type Orient = 'north' | 'course' | 'compass';
+	let orient = $state<Orient>('north');
 	const compassSupported = compass.supported;
 	let compassUnsub: (() => void) | null = null;
+	let lastPos: LatLng | null = null;
+
+	const ORIENT_ICON: Record<Orient, string> = { north: 'N', course: '➤', compass: '🧭' };
+	const ORIENT_LABEL: Record<Orient, string> = {
+		north: 'North-up',
+		course: 'Course-up',
+		compass: 'Compass'
+	};
 
 	let points: LatLng[] = [];
 	let cum: number[] = [];
@@ -72,18 +82,22 @@
 		geoUnsub = geo.subscribe(onGeo);
 		// Compass heading (when enabled) overrides the GPS-derived course.
 		compassUnsub = compass.subscribe((h) => {
-			if (compassOn && h !== null) course = h;
+			if (orient === 'compass' && h !== null) course = h;
 		});
 	});
 
-	async function toggleCompass() {
-		if (compassOn) {
-			compass.stop();
-			compassOn = false;
-			course = 0; // snap back to north-up
-			return;
+	// Cycle North-up → Course-up → Compass (Compass only when supported).
+	async function cycleOrient() {
+		const order: Orient[] = compassSupported ? ['north', 'course', 'compass'] : ['north', 'course'];
+		let next = order[(order.indexOf(orient) + 1) % order.length];
+		if (orient === 'compass') compass.stop();
+		if (next === 'compass') {
+			const ok = await compass.enable();
+			if (!ok) next = 'north'; // permission denied / no sensor
 		}
-		compassOn = await compass.enable();
+		orient = next;
+		// North-up resets to 0; Course-up re-derives on the next movement.
+		if (orient !== 'compass') course = 0;
 	}
 
 	function drawRoute() {
@@ -158,8 +172,13 @@
 	function update(pos: LatLng) {
 		if (!points.length || !target) return;
 
-		// Heading-up only when the compass is driving rotation; otherwise the
-		// map stays north-up (course stays 0).
+		// Course-up derives heading from movement. North-up keeps course at 0;
+		// Compass updates course via its own subscription.
+		if (orient === 'course' && lastPos && haversineKm(lastPos, pos) * 1000 > 3) {
+			course = bearing(lastPos, pos);
+		}
+		lastPos = pos;
+
 		const snap = snapToRoute(points, cum, pos);
 		const total = cum[cum.length - 1];
 		const remKm = Math.max(0, total - snap.distAlongKm);
@@ -298,18 +317,16 @@
 	</div>
 
 	<div class="tools">
-		{#if compassSupported}
-			<button
-				class="tool"
-				class:active={compassOn}
-				onclick={toggleCompass}
-				aria-label="Toggle compass heading"
-				title={compassOn ? 'Compass on (heading-up)' : 'Use compass for heading'}
-				data-testid="compass-toggle"
-			>
-				🧭
-			</button>
-		{/if}
+		<button
+			class="tool orient"
+			class:active={orient !== 'north'}
+			onclick={cycleOrient}
+			aria-label={`Map orientation: ${ORIENT_LABEL[orient]}`}
+			title={`Orientation: ${ORIENT_LABEL[orient]} — tap to change`}
+			data-testid="orient-toggle"
+		>
+			{ORIENT_ICON[orient]}
+		</button>
 		<button class="tool" onclick={() => (muted = !muted)} aria-label="Toggle voice" title="Toggle voice">
 			{muted ? '🔇' : '🔊'}
 		</button>
@@ -426,6 +443,10 @@
 	.tool.active {
 		border-color: var(--accent);
 		background: color-mix(in srgb, var(--accent) 22%, var(--bg-elev));
+	}
+	.tool.orient {
+		font-family: var(--font-display);
+		font-weight: 700;
 	}
 	.bottom {
 		position: absolute;
