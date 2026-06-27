@@ -11,7 +11,6 @@
 		cumulativeKm,
 		snapToRoute,
 		nextManeuver,
-		bearing,
 		instructionText,
 		formatDistance,
 		type Maneuver,
@@ -45,7 +44,6 @@
 	let points: LatLng[] = [];
 	let cum: number[] = [];
 	let maneuvers: Maneuver[] = [];
-	let lastPos: LatLng | null = null;
 	let offRouteCount = 0;
 	let lastRerouteTs = 0;
 	let fetchingTarget = false;
@@ -82,6 +80,7 @@
 		if (compassOn) {
 			compass.stop();
 			compassOn = false;
+			course = 0; // snap back to north-up
 			return;
 		}
 		compassOn = await compass.enable();
@@ -159,10 +158,8 @@
 	function update(pos: LatLng) {
 		if (!points.length || !target) return;
 
-		// GPS-derived course only when the compass isn't driving rotation.
-		if (!compassOn && lastPos && haversineKm(lastPos, pos) * 1000 > 3) course = bearing(lastPos, pos);
-		lastPos = pos;
-
+		// Heading-up only when the compass is driving rotation; otherwise the
+		// map stays north-up (course stays 0).
 		const snap = snapToRoute(points, cum, pos);
 		const total = cum[cum.length - 1];
 		const remKm = Math.max(0, total - snap.distAlongKm);
