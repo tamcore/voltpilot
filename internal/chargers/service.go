@@ -229,10 +229,7 @@ func (s *Service) gather(ctx context.Context, root geo.BBox, center geo.LatLng) 
 			dj := geo.Distance(center, geo.LatLng{Lat: clusters[j].Lat, Lon: clusters[j].Lon})
 			return di < dj
 		})
-		n := len(clusters)
-		if n > left {
-			n = left
-		}
+		n := min(len(clusters), left)
 		batch := clusters[:n]
 		left -= n
 		clusters = nil // next-level clusters are re-collected from the results

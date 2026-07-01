@@ -25,24 +25,22 @@ func (f *fakeLister) Detail(_ context.Context, _ int) (*enbw.StationDetail, erro
 	return f.detail, f.detErr
 }
 
-func iptr(i int) *int       { return &i }
-func sptr(s string) *string { return &s }
-func center() geo.LatLng    { return geo.LatLng{Lat: 49.778, Lon: 10.066} }
+func center() geo.LatLng { return geo.LatLng{Lat: 49.778, Lon: 10.066} }
 
 func sampleStations() []enbw.Station {
 	return []enbw.Station{
 		{ // near, DC, available, operator A
-			StationID: iptr(1), Operator: "Aral pulse", OperatorCode: "DEBPE",
+			StationID: new(1), Operator: "Aral pulse", OperatorCode: "DEBPE",
 			Lat: 49.779, Lon: 10.067, PlugTypes: []string{"CCS"}, MaxPowerInKw: 300,
-			NumberOfChargePoints: 4, AvailableChargePoints: 2, ShortAddress: sptr("Somewhere 1"),
+			NumberOfChargePoints: 4, AvailableChargePoints: 2, ShortAddress: new("Somewhere 1"),
 		},
 		{ // far, DC, occupied, operator A
-			StationID: iptr(2), Operator: "Aral pulse", OperatorCode: "DEBPE",
+			StationID: new(2), Operator: "Aral pulse", OperatorCode: "DEBPE",
 			Lat: 49.84, Lon: 10.14, PlugTypes: []string{"CCS"}, MaxPowerInKw: 150,
 			NumberOfChargePoints: 2, AvailableChargePoints: 0,
 		},
 		{ // near, AC, available, operator B
-			StationID: iptr(3), Operator: "LichtBlick", OperatorCode: "DEBDO",
+			StationID: new(3), Operator: "LichtBlick", OperatorCode: "DEBDO",
 			Lat: 49.7795, Lon: 10.0665, PlugTypes: []string{"TYPE_2"}, MaxPowerInKw: 22,
 			NumberOfChargePoints: 2, AvailableChargePoints: 1,
 		},
@@ -130,7 +128,7 @@ func TestNearbyListError(t *testing.T) {
 func TestChargerDetail(t *testing.T) {
 	det := &enbw.StationDetail{
 		Station: enbw.Station{
-			StationID: iptr(1888371), Operator: "Aral pulse", OperatorCode: "DEBPE",
+			StationID: new(1888371), Operator: "Aral pulse", OperatorCode: "DEBPE",
 			Lat: 49.778, Lon: 10.0657, PlugTypes: []string{"CCS"}, MaxPowerInKw: 300,
 			NumberOfChargePoints: 17, AvailableChargePoints: 9,
 		},
@@ -172,9 +170,9 @@ func (c *clusterLister) List(_ context.Context, b geo.BBox, _ bool) ([]enbw.Stat
 	// Narrow (viewPort-sized) query → reveal the individual station.
 	if (b.MaxLat - b.MinLat) < 0.05 {
 		return []enbw.Station{{
-			StationID: iptr(1158054), Operator: "EnBW", OperatorCode: "DEEBW",
+			StationID: new(1158054), Operator: "EnBW", OperatorCode: "DEEBW",
 			Lat: 49.82055, Lon: 9.97913, PlugTypes: []string{"CCS", "TYPE_2"}, MaxPowerInKw: 300,
-			NumberOfChargePoints: 9, AvailableChargePoints: 9, ShortAddress: sptr("Mainfrankenhöhe 12"),
+			NumberOfChargePoints: 9, AvailableChargePoints: 9, ShortAddress: new("Mainfrankenhöhe 12"),
 		}}, nil
 	}
 	// Wide query → the station is hidden inside a cluster.
